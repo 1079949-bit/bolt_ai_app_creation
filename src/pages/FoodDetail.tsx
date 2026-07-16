@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Clock, AlertTriangle, CheckCircle, XCircle, Info, Flame,
-  ThumbsUp, ThumbsDown, Scale, Heart, Zap, Pencil, Save, X,
+  ThumbsUp, ThumbsDown, Heart, Zap, Pencil, Save, X,
 } from 'lucide-react';
 import { supabase, type FoodEntry } from '../lib/supabase';
 
@@ -32,44 +32,6 @@ function getHealthScoreConfig(score: number): HealthConfig {
   if (score >= 40) return { color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-200', label: 'Moderate', icon: AlertTriangle, progressColor: 'bg-amber-500', ringColor: 'ring-amber-400', accent: 'bg-amber-500' };
   if (score >= 20) return { color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-200', label: 'Poor Nutrition', icon: AlertTriangle, progressColor: 'bg-orange-500', ringColor: 'ring-orange-400', accent: 'bg-orange-500' };
   return { color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200', label: 'Unhealthy', icon: XCircle, progressColor: 'bg-red-500', ringColor: 'ring-red-400', accent: 'bg-red-500' };
-}
-
-const FOOD_IMAGES: Record<string, string> = {
-  salad: 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg',
-  apple: 'https://images.pexels.com/photos/1040880/pexels-photo-1040880.jpeg',
-  banana: 'https://images.pexels.com/photos/2872783/pexels-photo-2872783.jpeg',
-  chicken: 'https://images.pexels.com/photos/6287529/pexels-photo-6287529.jpeg',
-  eggs: 'https://images.pexels.com/photos/14570694/pexels-photo-14570694.jpeg',
-  egg: 'https://images.pexels.com/photos/14570694/pexels-photo-14570694.jpeg',
-  broccoli: 'https://images.pexels.com/photos/10057348/pexels-photo-10057348.jpeg',
-  steak: 'https://images.pexels.com/photos/399726/pexels-photo-399726.jpeg',
-  fish: 'https://images.pexels.com/photos/1092730/pexels-photo-1092730.jpeg',
-  rice: 'https://images.pexels.com/photos/14644834/pexels-photo-14644834.jpeg',
-  pizza: 'https://images.pexels.com/photos/2762942/pexels-photo-2762942.jpeg',
-  burger: 'https://images.pexels.com/photos/1633578/pexels-photo-1633578.jpeg',
-  sandwich: 'https://images.pexels.com/photos/1633578/pexels-photo-1633578.jpeg',
-  cereal: 'https://images.pexels.com/photos/2313528/pexels-photo-2313528.jpeg',
-  oatmeal: 'https://images.pexels.com/photos/7750324/pexels-photo-7750324.jpeg',
-  yogurt: 'https://images.pexels.com/photos/3768924/pexels-photo-3768924.jpeg',
-  water: 'https://images.pexels.com/photos/577869/pexels-photo-577869.jpeg',
-  potatoes: 'https://images.pexels.com/photos/1599670/pexels-photo-1599670.jpeg',
-  carrots: 'https://images.pexels.com/photos/5249565/pexels-photo-5249565.jpeg',
-  spinach: 'https://images.pexels.com/photos/216639/pexels-photo-216639.jpeg',
-  avocado: 'https://images.pexels.com/photos/615704/pexels-photo-615704.jpeg',
-  cheerios: 'https://images.pexels.com/photos/2313528/pexels-photo-2313528.jpeg',
-  smoothie: 'https://images.pexels.com/photos/1346154/pexels-photo-1346154.jpeg',
-  coke: 'https://images.pexels.com/photos/1292294/pexels-photo-1292294.jpeg',
-  soda: 'https://images.pexels.com/photos/1292294/pexels-photo-1292294.jpeg',
-  ham: 'https://images.pexels.com/photos/4518843/pexels-photo-4518843.jpeg',
-  turkey: 'https://images.pexels.com/photos/4518843/pexels-photo-4518843.jpeg',
-};
-
-function getFoodImage(name: string): string {
-  const normalizedName = name.toLowerCase();
-  for (const [key, url] of Object.entries(FOOD_IMAGES)) {
-    if (normalizedName.includes(key)) return url;
-  }
-  return 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg';
 }
 
 const getDailyValuePercent = (amount: number, nutrient: keyof typeof DAILY_VALUES): number => {
@@ -169,7 +131,6 @@ export default function FoodDetail() {
   const navigate = useNavigate();
   const [food, setFood] = useState<FoodEntry | null>(null);
   const [loading, setLoading] = useState(true);
-  const [imgError, setImgError] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editValues, setEditValues] = useState<NutritionValues | null>(null);
   const [saving, setSaving] = useState(false);
@@ -332,30 +293,17 @@ export default function FoodDetail() {
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-6">
-        {/* Food Image */}
-        <div className="relative w-full h-72 rounded-2xl overflow-hidden shadow-xl mb-6">
-          {!imgError ? (
-            <img
-              src={getFoodImage(food.name)}
-              alt={food.name}
-              className="w-full h-full object-cover"
-              onError={() => setImgError(true)}
-            />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-primary-100 via-primary-200 to-primary-300 flex items-center justify-center">
-              <Scale className="w-20 h-20 text-primary-400" />
-            </div>
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-          <div className="absolute bottom-5 left-5 right-5">
-            <div className="flex items-center gap-3 mb-2">
+        {/* Food Name Header */}
+        <div className="w-full rounded-2xl overflow-hidden shadow-xl mb-6 bg-gradient-to-br from-primary-500 via-primary-600 to-primary-700">
+          <div className="px-6 py-8">
+            <div className="flex items-center gap-3 mb-3">
               <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold text-white ${config.accent}`}>
                 <IconComponent className="w-3 h-3 mr-1" />
                 {config.label}
               </span>
               <span className="text-white/80 text-sm capitalize">{food.meal_type}</span>
             </div>
-            <h2 className="text-3xl font-bold text-white mb-1">{food.name}</h2>
+            <h2 className="text-3xl font-bold text-white mb-2">{food.name}</h2>
             <div className="flex items-center gap-4 text-white/90 text-sm">
               <div className="flex items-center gap-1">
                 <Clock className="w-4 h-4" />

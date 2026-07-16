@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { User, ChevronDown } from 'lucide-react';
+import { User, ChevronDown, Trophy } from 'lucide-react';
 import type { Profile } from '../lib/supabase';
 import { supabase } from '../lib/supabase';
 
@@ -77,6 +77,18 @@ export default function Navbar() {
                 </Link>
               ))}
             </div>
+            <Link
+              to="/profile/josiah?tab=progress"
+              className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors border-t-2 border-gray-100"
+            >
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center ring-2 ring-amber-100">
+                <Trophy className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-gray-800">Progress Dashboard</p>
+                <p className="text-xs text-gray-500">Josiah's learning journey</p>
+              </div>
+            </Link>
           </div>
         )}
       </div>
