@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link, useSearchParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import {
   ArrowLeft, Code, Palette, Github, Figma, Zap, Users, CheckCircle2,
   Trophy, Rocket, Sparkles, Target, Music, Gamepad2, Heart,
@@ -29,16 +29,9 @@ const SHARED_TRAITS = [
 
 export default function ProfilePage() {
   const { name } = useParams();
-  const [searchParams] = useSearchParams();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'about' | 'progress'>('about');
-
-  useEffect(() => {
-    if (searchParams.get('tab') === 'progress') {
-      setActiveTab('progress');
-    }
-  }, [searchParams]);
 
   useEffect(() => {
     async function fetchProfile() {
