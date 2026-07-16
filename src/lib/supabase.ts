@@ -11,6 +11,10 @@ export type Profile = {
   role: string;
   biography: string | null;
   image_url: string | null;
+  github_username: string | null;
+  interests: string | null;
+  fun_fact: string | null;
+  goal: string | null;
   created_at: string;
 };
 

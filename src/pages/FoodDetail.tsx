@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Clock, AlertTriangle, CheckCircle, XCircle, Info, Flame,
-  ThumbsUp, ThumbsDown, Scale, Heart, Zap
+  ThumbsUp, ThumbsDown, Scale, Heart, Zap, Pencil, Save, X,
 } from 'lucide-react';
 import { supabase, type FoodEntry } from '../lib/supabase';
 
@@ -84,6 +84,67 @@ const formatTime = (timestamp: string) =>
 const formatDate = (timestamp: string) =>
   new Date(timestamp).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
+type NutritionValues = {
+  calories: number;
+  protein_g: number;
+  fat_g: number;
+  carbs_g: number;
+  fiber_g: number;
+  sugars_g: number;
+  sodium_mg: number;
+  health_score: number;
+};
+
+function deriveReason(f: NutritionValues): string {
+  const parts: string[] = [];
+
+  if (f.calories <= 200) parts.push(`At ${f.calories} calories, this is a light choice that fits easily into any meal plan.`);
+  else if (f.calories >= 600) parts.push(`At ${f.calories} calories, this is calorie-dense and best as a main meal rather than a snack.`);
+  else parts.push(`At ${f.calories} calories, this has a reasonable calorie load for a typical serving.`);
+
+  if (f.protein_g >= 15) parts.push(`High in protein (${f.protein_g}g), which supports muscle repair and satiety.`);
+  else if (f.protein_g > 0 && f.protein_g < 5) parts.push(`It doesn't have enough protein (${f.protein_g}g) — pair it with a protein source for balance.`);
+
+  if (f.fiber_g >= 5) parts.push(`Good source of fiber (${f.fiber_g}g), aiding digestion and steady energy.`);
+  else if (f.fiber_g < 2) parts.push(`Low in fiber (${f.fiber_g}g) — add whole grains or produce to improve this.`);
+
+  if (f.sugars_g >= 20) parts.push(`High in sugars (${f.sugars_g}g), which may spike blood sugar.`);
+  if (f.fat_g >= 20) parts.push(`Higher in fat (${f.fat_g}g) — be mindful of portion size.`);
+  else if (f.fat_g > 0 && f.fat_g <= 10) parts.push(`Moderate fat content (${f.fat_g}g), fitting within a balanced day.`);
+
+  if (f.sodium_mg >= 600) parts.push(`Sodium is on the higher side (${f.sodium_mg}mg) — watch intake if salt-sensitive.`);
+
+  return parts.join(' ');
+}
+
+function deriveProsAndCons(f: NutritionValues): { pros: string[]; cons: string[] } {
+  const pros: string[] = [];
+  const cons: string[] = [];
+
+  if (f.protein_g >= 15) pros.push(`High in protein (${f.protein_g}g) — supports muscle repair and satiety.`);
+  else if (f.protein_g > 0 && f.protein_g < 5) cons.push(`Low in protein (${f.protein_g}g) — pair with a protein source for balance.`);
+
+  if (f.fiber_g >= 5) pros.push(`Good source of fiber (${f.fiber_g}g) — aids digestion and steady energy.`);
+  else if (f.fiber_g < 2) cons.push(`Low fiber (${f.fiber_g}g) — add whole grains or produce to improve this.`);
+
+  if (f.sugars_g >= 20) cons.push(`High in sugars (${f.sugars_g}g) — may spike blood sugar.`);
+
+  if (f.fat_g >= 20) cons.push(`Higher in fat (${f.fat_g}g) — be mindful of portion size.`);
+  else if (f.fat_g > 0 && f.fat_g <= 10) pros.push(`Moderate fat content (${f.fat_g}g) — fits within a balanced day.`);
+
+  if (f.sodium_mg >= 600) cons.push(`Sodium is on the higher side (${f.sodium_mg}mg) — watch intake if salt-sensitive.`);
+
+  if (f.calories <= 200) pros.push(`Light on calories (${f.calories}) — easy to fit into any meal plan.`);
+  else if (f.calories >= 600) pros.push(`Calorie-dense (${f.calories}) — best as a main meal rather than a snack.`);
+  else pros.push(`Reasonable calorie load (${f.calories}) for a typical serving.`);
+
+  const score = f.health_score || 0;
+  if (score >= 80) pros.push('Overall nutrient density is strong relative to calories.');
+  else if (score < 50) cons.push('Low overall nutrient density — limit frequency or balance with whole foods.');
+
+  return { pros, cons };
+}
+
 function getReasonParagraphs(reason: string | null): string[] {
   if (!reason) return [];
   return reason
@@ -92,36 +153,16 @@ function getReasonParagraphs(reason: string | null): string[] {
     .filter(Boolean);
 }
 
-function deriveProsAndCons(food: FoodEntry): { pros: string[]; cons: string[] } {
-  const pros: string[] = [];
-  const cons: string[] = [];
-
-  if (food.protein_g >= 15) pros.push(`High in protein (${food.protein_g}g) — supports muscle repair and satiety.`);
-  else if (food.protein_g > 0 && food.protein_g < 5) cons.push(`Low in protein (${food.protein_g}g) — pair with a protein source for balance.`);
-
-  if (food.fiber_g >= 5) pros.push(`Good source of fiber (${food.fiber_g}g) — aids digestion and steady energy.`);
-  else if (food.fiber_g < 2) cons.push(`Low fiber (${food.fiber_g}g) — add whole grains or produce to improve this.`);
-
-  if (food.sugars_g >= 20) cons.push(`High in sugars (${food.sugars_g}g) — may spike blood sugar.`);
-
-  if (food.fat_g >= 20) cons.push(`Higher in fat (${food.fat_g}g) — be mindful of portion size.`);
-  else if (food.fat_g > 0 && food.fat_g <= 10) pros.push(`Moderate fat content (${food.fiber_g}g) — fits within a balanced day.`);
-
-  if (food.sodium_mg >= 600) cons.push(`Sodium is on the higher side (${food.sodium_mg}mg) — watch intake if salt-sensitive.`);
-
-  const calorieNote = food.calories <= 200
-    ? `Light on calories (${food.calories}) — easy to fit into any meal plan.`
-    : food.calories >= 600
-      ? `Calorie-dense (${food.calories}) — best as a main meal rather than a snack.`
-      : `Reasonable calorie load (${food.calories}) for a typical serving.`;
-  (food.calories <= 200 || food.calories >= 600 ? pros : pros).push(calorieNote);
-
-  const score = food.health_score || 0;
-  if (score >= 80) pros.push('Overall nutrient density is strong relative to calories.');
-  else if (score < 50) cons.push('Low overall nutrient density — limit frequency or balance with whole foods.');
-
-  return { pros, cons };
-}
+const EDITABLE_FIELDS: { key: keyof NutritionValues; label: string; unit: string; step: string }[] = [
+  { key: 'calories', label: 'Calories', unit: 'cal', step: '1' },
+  { key: 'protein_g', label: 'Protein', unit: 'g', step: '0.1' },
+  { key: 'fat_g', label: 'Total Fat', unit: 'g', step: '0.1' },
+  { key: 'carbs_g', label: 'Carbohydrates', unit: 'g', step: '0.1' },
+  { key: 'fiber_g', label: 'Dietary Fiber', unit: 'g', step: '0.1' },
+  { key: 'sugars_g', label: 'Sugars', unit: 'g', step: '0.1' },
+  { key: 'sodium_mg', label: 'Sodium', unit: 'mg', step: '1' },
+  { key: 'health_score', label: 'Health Score', unit: '/100', step: '1' },
+];
 
 export default function FoodDetail() {
   const { id } = useParams();
@@ -129,6 +170,10 @@ export default function FoodDetail() {
   const [food, setFood] = useState<FoodEntry | null>(null);
   const [loading, setLoading] = useState(true);
   const [imgError, setImgError] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editValues, setEditValues] = useState<NutritionValues | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchFood() {
@@ -163,10 +208,84 @@ export default function FoodDetail() {
     );
   }
 
-  const config = getHealthScoreConfig(food.health_score || 0);
+  const startEdit = () => {
+    setEditValues({
+      calories: food.calories,
+      protein_g: food.protein_g,
+      fat_g: food.fat_g,
+      carbs_g: food.carbs_g,
+      fiber_g: food.fiber_g,
+      sugars_g: food.sugars_g,
+      sodium_mg: food.sodium_mg,
+      health_score: food.health_score,
+    });
+    setEditing(true);
+    setSaveError(null);
+  };
+
+  const cancelEdit = () => {
+    setEditing(false);
+    setEditValues(null);
+    setSaveError(null);
+  };
+
+  const saveEdit = async () => {
+    if (!editValues || !food) return;
+    setSaving(true);
+    setSaveError(null);
+
+    const newReason = deriveReason(editValues);
+
+    const { data, error } = await supabase
+      .from('food_entries')
+      .update({
+        calories: editValues.calories,
+        protein_g: editValues.protein_g,
+        fat_g: editValues.fat_g,
+        carbs_g: editValues.carbs_g,
+        fiber_g: editValues.fiber_g,
+        sugars_g: editValues.sugars_g,
+        sodium_mg: editValues.sodium_mg,
+        health_score: editValues.health_score,
+        reason: newReason,
+      })
+      .eq('id', food.id)
+      .select()
+      .maybeSingle();
+
+    if (error) {
+      setSaveError('Failed to save changes. Please try again.');
+      setSaving(false);
+      return;
+    }
+
+    if (data) {
+      setFood(data);
+      setEditing(false);
+      setEditValues(null);
+    }
+    setSaving(false);
+  };
+
+  // Use edited values for live preview when editing, otherwise stored food
+  const displayValues: NutritionValues = editing && editValues
+    ? editValues
+    : {
+        calories: food.calories,
+        protein_g: food.protein_g,
+        fat_g: food.fat_g,
+        carbs_g: food.carbs_g,
+        fiber_g: food.fiber_g,
+        sugars_g: food.sugars_g,
+        sodium_mg: food.sodium_mg,
+        health_score: food.health_score,
+      };
+
+  const config = getHealthScoreConfig(displayValues.health_score || 0);
   const IconComponent = config.icon;
-  const reasonParagraphs = getReasonParagraphs(food.reason);
-  const { pros, cons } = deriveProsAndCons(food);
+  const liveReason = editing && editValues ? deriveReason(editValues) : food.reason;
+  const reasonParagraphs = getReasonParagraphs(liveReason);
+  const { pros, cons } = deriveProsAndCons(displayValues);
 
   return (
     <div className="min-h-screen bg-cream pb-8">
@@ -181,7 +300,34 @@ export default function FoodDetail() {
             Back to Home
           </button>
           <h1 className="text-lg font-bold text-gray-800">Detailed View</h1>
-          <div className="w-20" />
+          {!editing ? (
+            <button
+              onClick={startEdit}
+              className="flex items-center gap-1.5 text-primary-500 hover:text-primary-600 transition-colors font-semibold text-sm"
+            >
+              <Pencil className="w-4 h-4" />
+              Edit
+            </button>
+          ) : (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={cancelEdit}
+                disabled={saving}
+                className="flex items-center gap-1.5 text-gray-500 hover:text-gray-700 transition-colors font-semibold text-sm"
+              >
+                <X className="w-4 h-4" />
+                Cancel
+              </button>
+              <button
+                onClick={saveEdit}
+                disabled={saving}
+                className="flex items-center gap-1.5 text-primary-500 hover:text-primary-600 transition-colors font-semibold text-sm"
+              >
+                <Save className="w-4 h-4" />
+                {saving ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          )}
         </div>
       </header>
 
@@ -220,17 +366,70 @@ export default function FoodDetail() {
           </div>
         </div>
 
+        {/* Edit Mode Form */}
+        {editing && editValues && (
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-primary-200 mb-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Pencil className="w-5 h-5 text-primary-500" />
+              <h3 className="text-lg font-semibold text-gray-800">Edit Nutrition Values</h3>
+            </div>
+            <p className="text-sm text-gray-500 mb-4">
+              Correct any inaccurate values. The health analysis below will update automatically to match.
+            </p>
+            <div className="grid grid-cols-2 gap-4">
+              {EDITABLE_FIELDS.map((field) => (
+                <div key={field.key}>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">
+                    {field.label} ({field.unit})
+                  </label>
+                  <input
+                    type="number"
+                    step={field.step}
+                    min="0"
+                    value={editValues[field.key]}
+                    onChange={(e) => {
+                      const val = parseFloat(e.target.value) || 0;
+                      setEditValues({ ...editValues, [field.key]: Math.max(0, val) });
+                    }}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                  />
+                </div>
+              ))}
+            </div>
+            {saveError && (
+              <p className="text-sm text-red-500 mt-4">{saveError}</p>
+            )}
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={cancelEdit}
+                disabled={saving}
+                className="flex-1 py-3 bg-gray-100 text-gray-600 rounded-xl font-semibold hover:bg-gray-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={saveEdit}
+                disabled={saving}
+                className="flex-1 flex items-center justify-center gap-2 py-3 bg-primary-500 text-white rounded-xl font-semibold hover:bg-primary-600 transition-colors"
+              >
+                <Save className="w-4 h-4" />
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Health Score */}
         <div className={`rounded-2xl p-6 mb-6 ${config.bg} border-2 ${config.border}`}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
               <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${config.accent} text-white shadow-lg`}>
-                <span className="text-2xl font-bold">{food.health_score}</span>
+                <span className="text-2xl font-bold">{displayValues.health_score}</span>
               </div>
               <div>
                 <p className="text-sm text-gray-500 font-medium">Health Score</p>
                 <p className={`text-2xl font-bold ${config.color}`}>
-                  {food.health_score}/100
+                  {displayValues.health_score}/100
                 </p>
               </div>
             </div>
@@ -246,7 +445,7 @@ export default function FoodDetail() {
           <div className="w-full h-4 bg-gray-200 rounded-full overflow-hidden shadow-inner">
             <div
               className={`h-full rounded-full transition-all duration-700 ${config.progressColor}`}
-              style={{ width: `${food.health_score}%` }}
+              style={{ width: `${displayValues.health_score}%` }}
             />
           </div>
         </div>
@@ -277,22 +476,25 @@ export default function FoodDetail() {
             ))}
           </div>
           <p className={`mt-4 text-sm font-medium ${config.color}`}>
-            This item scored {food.health_score}/100, placing it in the "{config.label}" tier.
+            This item scored {displayValues.health_score}/100, placing it in the "{config.label}" tier.
           </p>
         </div>
 
-        {/* Why this score? (AI reason) */}
+        {/* Why this score? (reason) */}
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-6">
           <div className="flex items-center gap-2 mb-4">
             <Info className="w-5 h-5 text-primary-500" />
             <h3 className="text-lg font-semibold text-gray-800">Why This Score?</h3>
+            {editing && (
+              <span className="text-xs text-primary-500 bg-primary-50 px-2 py-0.5 rounded-full ml-auto">Live preview</span>
+            )}
           </div>
           {reasonParagraphs.length > 0 ? (
             <div className="space-y-3">
               {reasonParagraphs.map((sentence, idx) => (
                 <div key={idx} className="flex items-start gap-3">
                   <div className={`w-2 h-2 rounded-full mt-2.5 flex-shrink-0 ${
-                    (food.health_score || 0) >= 50 ? 'bg-green-500' : 'bg-orange-500'
+                    (displayValues.health_score || 0) >= 50 ? 'bg-green-500' : 'bg-orange-500'
                   }`} />
                   <p className="text-gray-600 leading-relaxed">{sentence}{sentence.endsWith('.') ? '' : '.'}</p>
                 </div>
@@ -370,7 +572,7 @@ export default function FoodDetail() {
                 <Flame className="w-8 h-8 text-orange-500" />
                 <div>
                   <p className="text-sm text-gray-600">Calories</p>
-                  <p className="text-4xl font-bold text-gray-900">{food.calories}</p>
+                  <p className="text-4xl font-bold text-gray-900">{displayValues.calories}</p>
                 </div>
               </div>
               <p className="text-xs text-gray-500 pb-1">per serving</p>
@@ -381,12 +583,12 @@ export default function FoodDetail() {
             {/* Detailed Nutrition Label Table */}
             <div className="border border-gray-200 rounded-lg overflow-hidden">
               {[
-                { label: 'Total Fat', amount: food.fat_g, unit: 'g', nutrient: 'fat' as const },
-                { label: 'Total Carbohydrates', amount: food.carbs_g, unit: 'g', nutrient: 'carbs' as const },
-                { label: 'Protein', amount: food.protein_g, unit: 'g', nutrient: 'protein' as const },
-                { label: 'Dietary Fiber', amount: food.fiber_g, unit: 'g', nutrient: 'fiber' as const },
-                { label: 'Sugars', amount: food.sugars_g, unit: 'g', nutrient: 'sugars' as const },
-                { label: 'Sodium', amount: food.sodium_mg, unit: 'mg', nutrient: 'sodium' as const },
+                { label: 'Total Fat', amount: displayValues.fat_g, unit: 'g', nutrient: 'fat' as const },
+                { label: 'Total Carbohydrates', amount: displayValues.carbs_g, unit: 'g', nutrient: 'carbs' as const },
+                { label: 'Protein', amount: displayValues.protein_g, unit: 'g', nutrient: 'protein' as const },
+                { label: 'Dietary Fiber', amount: displayValues.fiber_g, unit: 'g', nutrient: 'fiber' as const },
+                { label: 'Sugars', amount: displayValues.sugars_g, unit: 'g', nutrient: 'sugars' as const },
+                { label: 'Sodium', amount: displayValues.sodium_mg, unit: 'mg', nutrient: 'sodium' as const },
               ].map((row, idx) => {
                 const pct = getDailyValuePercent(row.amount, row.nutrient);
                 const isHigh = pct >= 20;
@@ -448,17 +650,17 @@ export default function FoodDetail() {
           <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
             <Scale className="w-5 h-5 text-amber-500 mx-auto mb-2" />
             <p className="text-xs text-gray-500">Fat</p>
-            <p className="text-lg font-bold text-gray-800">{food.fat_g}g</p>
+            <p className="text-lg font-bold text-gray-800">{displayValues.fat_g}g</p>
           </div>
           <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
             <Zap className="w-5 h-5 text-orange-500 mx-auto mb-2" />
             <p className="text-xs text-gray-500">Carbs</p>
-            <p className="text-lg font-bold text-gray-800">{food.carbs_g}g</p>
+            <p className="text-lg font-bold text-gray-800">{displayValues.carbs_g}g</p>
           </div>
           <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
             <Heart className="w-5 h-5 text-blue-500 mx-auto mb-2" />
             <p className="text-xs text-gray-500">Protein</p>
-            <p className="text-lg font-bold text-gray-800">{food.protein_g}g</p>
+            <p className="text-lg font-bold text-gray-800">{displayValues.protein_g}g</p>
           </div>
         </div>
       </main>
