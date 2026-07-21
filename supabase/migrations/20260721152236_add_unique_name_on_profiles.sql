@@ -1,0 +1,1 @@
+ALTER TABLE profiles ADD CONSTRAINT profiles_name_unique UNIQUE (name);

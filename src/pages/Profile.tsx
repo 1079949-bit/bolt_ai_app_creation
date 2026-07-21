@@ -40,6 +40,7 @@ export default function ProfilePage() {
         .from('profiles')
         .select('*')
         .ilike('name', name)
+        .limit(1)
         .maybeSingle();
       setProfile(data);
       setLoading(false);
