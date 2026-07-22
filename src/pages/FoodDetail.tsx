@@ -15,6 +15,7 @@ type HealthConfig = {
   progressColor: string;
   ringColor: string;
   accent: string;
+  gradient: string;
 };
 
 const FOOD_IMAGES: Record<string, string> = {
@@ -65,11 +66,11 @@ const DAILY_VALUES: Record<string, { value: number; unit: string }> = {
 };
 
 function getHealthScoreConfig(score: number): HealthConfig {
-  if (score >= 80) return { color: 'text-green-600', bg: 'bg-green-50', border: 'border-green-200', label: 'Excellent Choice', icon: CheckCircle, progressColor: 'bg-green-500', ringColor: 'ring-green-400', accent: 'bg-green-500' };
-  if (score >= 60) return { color: 'text-lime-600', bg: 'bg-lime-50', border: 'border-lime-200', label: 'Good Choice', icon: CheckCircle, progressColor: 'bg-lime-500', ringColor: 'ring-lime-400', accent: 'bg-lime-500' };
-  if (score >= 40) return { color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-200', label: 'Moderate', icon: AlertTriangle, progressColor: 'bg-amber-500', ringColor: 'ring-amber-400', accent: 'bg-amber-500' };
-  if (score >= 20) return { color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-200', label: 'Poor Nutrition', icon: AlertTriangle, progressColor: 'bg-orange-500', ringColor: 'ring-orange-400', accent: 'bg-orange-500' };
-  return { color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200', label: 'Unhealthy', icon: XCircle, progressColor: 'bg-red-500', ringColor: 'ring-red-400', accent: 'bg-red-500' };
+  if (score >= 80) return { color: 'text-green-600', bg: 'bg-green-50/80', border: 'border-green-200/60', label: 'Excellent Choice', icon: CheckCircle, progressColor: 'bg-gradient-to-r from-green-400 to-green-600', ringColor: 'ring-green-400', accent: 'bg-gradient-to-br from-green-400 to-green-600', gradient: 'from-green-400 to-emerald-600' };
+  if (score >= 60) return { color: 'text-lime-600', bg: 'bg-lime-50/80', border: 'border-lime-200/60', label: 'Good Choice', icon: CheckCircle, progressColor: 'bg-gradient-to-r from-lime-400 to-lime-600', ringColor: 'ring-lime-400', accent: 'bg-gradient-to-br from-lime-400 to-lime-600', gradient: 'from-lime-400 to-green-600' };
+  if (score >= 40) return { color: 'text-amber-600', bg: 'bg-amber-50/80', border: 'border-amber-200/60', label: 'Moderate', icon: AlertTriangle, progressColor: 'bg-gradient-to-r from-amber-400 to-amber-600', ringColor: 'ring-amber-400', accent: 'bg-gradient-to-br from-amber-400 to-amber-600', gradient: 'from-amber-400 to-orange-600' };
+  if (score >= 20) return { color: 'text-orange-600', bg: 'bg-orange-50/80', border: 'border-orange-200/60', label: 'Poor Nutrition', icon: AlertTriangle, progressColor: 'bg-gradient-to-r from-orange-400 to-orange-600', ringColor: 'ring-orange-400', accent: 'bg-gradient-to-br from-orange-400 to-orange-600', gradient: 'from-orange-400 to-red-600' };
+  return { color: 'text-red-600', bg: 'bg-red-50/80', border: 'border-red-200/60', label: 'Unhealthy', icon: XCircle, progressColor: 'bg-gradient-to-r from-red-400 to-red-600', ringColor: 'ring-red-400', accent: 'bg-gradient-to-br from-red-400 to-red-600', gradient: 'from-red-400 to-rose-600' };
 }
 
 const getDailyValuePercent = (amount: number, nutrient: keyof typeof DAILY_VALUES): number => {
@@ -97,51 +98,37 @@ type NutritionValues = {
 
 function deriveReason(f: NutritionValues): string {
   const parts: string[] = [];
-
   if (f.calories <= 200) parts.push(`At ${f.calories} calories, this is a light choice that fits easily into any meal plan.`);
   else if (f.calories >= 600) parts.push(`At ${f.calories} calories, this is calorie-dense and best as a main meal rather than a snack.`);
   else parts.push(`At ${f.calories} calories, this has a reasonable calorie load for a typical serving.`);
-
   if (f.protein_g >= 15) parts.push(`High in protein (${f.protein_g}g), which supports muscle repair and satiety.`);
   else if (f.protein_g > 0 && f.protein_g < 5) parts.push(`It doesn't have enough protein (${f.protein_g}g) — pair it with a protein source for balance.`);
-
   if (f.fiber_g >= 5) parts.push(`Good source of fiber (${f.fiber_g}g), aiding digestion and steady energy.`);
   else if (f.fiber_g < 2) parts.push(`Low in fiber (${f.fiber_g}g) — add whole grains or produce to improve this.`);
-
   if (f.sugars_g >= 20) parts.push(`High in sugars (${f.sugars_g}g), which may spike blood sugar.`);
   if (f.fat_g >= 20) parts.push(`Higher in fat (${f.fat_g}g) — be mindful of portion size.`);
   else if (f.fat_g > 0 && f.fat_g <= 10) parts.push(`Moderate fat content (${f.fat_g}g), fitting within a balanced day.`);
-
   if (f.sodium_mg >= 600) parts.push(`Sodium is on the higher side (${f.sodium_mg}mg) — watch intake if salt-sensitive.`);
-
   return parts.join(' ');
 }
 
 function deriveProsAndCons(f: NutritionValues): { pros: string[]; cons: string[] } {
   const pros: string[] = [];
   const cons: string[] = [];
-
   if (f.protein_g >= 15) pros.push(`High in protein (${f.protein_g}g) — supports muscle repair and satiety.`);
   else if (f.protein_g > 0 && f.protein_g < 5) cons.push(`Low in protein (${f.protein_g}g) — pair with a protein source for balance.`);
-
   if (f.fiber_g >= 5) pros.push(`Good source of fiber (${f.fiber_g}g) — aids digestion and steady energy.`);
   else if (f.fiber_g < 2) cons.push(`Low fiber (${f.fiber_g}g) — add whole grains or produce to improve this.`);
-
   if (f.sugars_g >= 20) cons.push(`High in sugars (${f.sugars_g}g) — may spike blood sugar.`);
-
   if (f.fat_g >= 20) cons.push(`Higher in fat (${f.fat_g}g) — be mindful of portion size.`);
   else if (f.fat_g > 0 && f.fat_g <= 10) pros.push(`Moderate fat content (${f.fat_g}g) — fits within a balanced day.`);
-
   if (f.sodium_mg >= 600) cons.push(`Sodium is on the higher side (${f.sodium_mg}mg) — watch intake if salt-sensitive.`);
-
   if (f.calories <= 200) pros.push(`Light on calories (${f.calories}) — easy to fit into any meal plan.`);
   else if (f.calories >= 600) pros.push(`Calorie-dense (${f.calories}) — best as a main meal rather than a snack.`);
   else pros.push(`Reasonable calorie load (${f.calories}) for a typical serving.`);
-
   const score = f.health_score || 0;
   if (score >= 80) pros.push('Overall nutrient density is strong relative to calories.');
   else if (score < 50) cons.push('Low overall nutrient density — limit frequency or balance with whole foods.');
-
   return { pros, cons };
 }
 
@@ -171,7 +158,7 @@ export default function FoodDetail() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [editValues, setEditValues] = useState<NutritionValues | null>(null);
-  const [imgError, setImgError] = useState(false);
+  const [imgError] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -192,7 +179,10 @@ export default function FoodDetail() {
   if (loading) {
     return (
       <div className="min-h-screen bg-cream flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-500 border-t-transparent" />
+        <div className="relative">
+          <div className="absolute inset-0 rounded-full border-4 border-primary-100 animate-pulse-ring" />
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-500 border-t-transparent" />
+        </div>
       </div>
     );
   }
@@ -200,7 +190,7 @@ export default function FoodDetail() {
   if (!food) {
     return (
       <div className="min-h-screen bg-cream flex flex-col items-center justify-center p-6">
-        <h1 className="text-2xl font-bold text-gray-800 mb-4">Food Not Found</h1>
+        <h1 className="text-2xl font-bold text-gray-800 mb-4 font-display">Food Not Found</h1>
         <button onClick={() => navigate('/')} className="text-primary-500 hover:underline font-medium">
           Go Home
         </button>
@@ -217,7 +207,7 @@ export default function FoodDetail() {
       fiber_g: food.fiber_g,
       sugars_g: food.sugars_g,
       sodium_mg: food.sodium_mg,
-      health_score: food.health_score,
+      health_score: food.health_score || 0,
     });
     setEditing(true);
     setSaveError(null);
@@ -233,9 +223,7 @@ export default function FoodDetail() {
     if (!editValues || !food) return;
     setSaving(true);
     setSaveError(null);
-
     const newReason = deriveReason(editValues);
-
     const { data, error } = await supabase
       .from('food_entries')
       .update({
@@ -258,7 +246,6 @@ export default function FoodDetail() {
       setSaving(false);
       return;
     }
-
     if (data) {
       setFood(data);
       setEditing(false);
@@ -267,7 +254,6 @@ export default function FoodDetail() {
     setSaving(false);
   };
 
-  // Use edited values for live preview when editing, otherwise stored food
   const displayValues: NutritionValues = editing && editValues
     ? editValues
     : {
@@ -278,7 +264,7 @@ export default function FoodDetail() {
         fiber_g: food.fiber_g,
         sugars_g: food.sugars_g,
         sodium_mg: food.sodium_mg,
-        health_score: food.health_score,
+        health_score: food.health_score || 0,
       };
 
   const config = getHealthScoreConfig(displayValues.health_score || 0);
@@ -288,18 +274,18 @@ export default function FoodDetail() {
   const { pros, cons } = deriveProsAndCons(displayValues);
 
   return (
-    <div className="min-h-screen bg-cream pb-8">
+    <div className="min-h-screen bg-gradient-to-b from-cream via-cream to-white/50 pb-8">
       {/* Header */}
-      <header className="bg-white border-b border-gray-100 sticky top-0 z-10 shadow-sm">
+      <header className="bg-white/80 backdrop-blur-md border-b border-gray-100/80 sticky top-0 z-10 shadow-sm">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
           <button
             onClick={() => navigate('/')}
-            className="flex items-center gap-2 text-primary-500 hover:text-primary-600 transition-colors font-semibold"
+            className="flex items-center gap-2 text-primary-500 hover:text-primary-600 transition-colors font-semibold group"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-5 h-5 transition-transform group-hover:-translate-x-1" />
             Back to Home
           </button>
-          <h1 className="text-lg font-bold text-gray-800">Detailed View</h1>
+          <h1 className="text-lg font-bold text-gray-800 font-display">Detailed View</h1>
           {!editing ? (
             <button
               onClick={startEdit}
@@ -332,30 +318,29 @@ export default function FoodDetail() {
       </header>
 
       <main className="max-w-2xl mx-auto px-4 py-6">
-        {/* Food Image */}
-        <div className="relative w-full h-72 rounded-2xl overflow-hidden shadow-xl mb-6">
+        {/* Food Image Hero */}
+        <div className="relative w-full h-72 rounded-3xl overflow-hidden shadow-xl mb-6 group">
           {!imgError ? (
             <img
               src={getFoodImage(food.name)}
               alt={food.name}
-              className="w-full h-full object-cover"
-              onError={() => setImgError(true)}
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-primary-100 via-primary-200 to-primary-300 flex items-center justify-center">
-              <Scale className="w-20 h-20 text-primary-400" />
+            <div className={`w-full h-full bg-gradient-to-br ${config.gradient} flex items-center justify-center`}>
+              <Scale className="w-20 h-20 text-white/80" />
             </div>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-          <div className="absolute bottom-5 left-5 right-5">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+          <div className="absolute bottom-5 left-5 right-5 animate-fade-up">
             <div className="flex items-center gap-3 mb-2">
-              <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold text-white ${config.accent}`}>
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold text-white ${config.accent} shadow-lg`}>
                 <IconComponent className="w-3 h-3 mr-1" />
                 {config.label}
               </span>
-              <span className="text-white/80 text-sm capitalize">{food.meal_type}</span>
+              <span className="text-white/80 text-sm capitalize bg-black/30 backdrop-blur-sm px-2.5 py-1 rounded-full">{food.meal_type}</span>
             </div>
-            <h2 className="text-3xl font-bold text-white mb-1">{food.name}</h2>
+            <h2 className="text-3xl font-bold text-white mb-1 font-display tracking-tight">{food.name}</h2>
             <div className="flex items-center gap-4 text-white/90 text-sm">
               <div className="flex items-center gap-1">
                 <Clock className="w-4 h-4" />
@@ -368,10 +353,10 @@ export default function FoodDetail() {
 
         {/* Edit Mode Form */}
         {editing && editValues && (
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-primary-200 mb-6">
+          <div className="surface p-6 mb-6 animate-fade-up">
             <div className="flex items-center gap-2 mb-4">
               <Pencil className="w-5 h-5 text-primary-500" />
-              <h3 className="text-lg font-semibold text-gray-800">Edit Nutrition Values</h3>
+              <h3 className="text-lg font-semibold text-gray-800 font-display">Edit Nutrition Values</h3>
             </div>
             <p className="text-sm text-gray-500 mb-4">
               Correct any inaccurate values. The health analysis below will update automatically to match.
@@ -379,7 +364,7 @@ export default function FoodDetail() {
             <div className="grid grid-cols-2 gap-4">
               {EDITABLE_FIELDS.map((field) => (
                 <div key={field.key}>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">
+                  <label className="block text-sm font-medium text-gray-600 mb-1.5">
                     {field.label} ({field.unit})
                   </label>
                   <input
@@ -391,14 +376,12 @@ export default function FoodDetail() {
                       const val = parseFloat(e.target.value) || 0;
                       setEditValues({ ...editValues, [field.key]: Math.max(0, val) });
                     }}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                    className="w-full px-4 py-2.5 bg-gray-50/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent focus:bg-white transition-all"
                   />
                 </div>
               ))}
             </div>
-            {saveError && (
-              <p className="text-sm text-red-500 mt-4">{saveError}</p>
-            )}
+            {saveError && <p className="text-sm text-red-500 mt-4">{saveError}</p>}
             <div className="flex gap-3 mt-6">
               <button
                 onClick={cancelEdit}
@@ -410,7 +393,7 @@ export default function FoodDetail() {
               <button
                 onClick={saveEdit}
                 disabled={saving}
-                className="flex-1 flex items-center justify-center gap-2 py-3 bg-primary-500 text-white rounded-xl font-semibold hover:bg-primary-600 transition-colors"
+                className="flex-1 flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-primary-500/20 transition-all"
               >
                 <Save className="w-4 h-4" />
                 {saving ? 'Saving...' : 'Save Changes'}
@@ -420,15 +403,15 @@ export default function FoodDetail() {
         )}
 
         {/* Health Score */}
-        <div className={`rounded-2xl p-6 mb-6 ${config.bg} border-2 ${config.border}`}>
+        <div className={`rounded-3xl p-6 mb-6 ${config.bg} border-2 ${config.border} animate-fade-up`}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
               <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${config.accent} text-white shadow-lg`}>
-                <span className="text-2xl font-bold">{displayValues.health_score}</span>
+                <span className="text-2xl font-bold tabular-nums">{displayValues.health_score}</span>
               </div>
               <div>
                 <p className="text-sm text-gray-500 font-medium">Health Score</p>
-                <p className={`text-2xl font-bold ${config.color}`}>
+                <p className={`text-2xl font-bold ${config.color} tabular-nums`}>
                   {displayValues.health_score}/100
                 </p>
               </div>
@@ -440,9 +423,7 @@ export default function FoodDetail() {
               </div>
             </div>
           </div>
-
-          {/* Score Bar */}
-          <div className="w-full h-4 bg-gray-200 rounded-full overflow-hidden shadow-inner">
+          <div className="w-full h-4 bg-gray-200/60 rounded-full overflow-hidden shadow-inner">
             <div
               className={`h-full rounded-full transition-all duration-700 ${config.progressColor}`}
               style={{ width: `${displayValues.health_score}%` }}
@@ -451,25 +432,25 @@ export default function FoodDetail() {
         </div>
 
         {/* Rating Explanation */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-6">
+        <div className="surface p-6 mb-6 animate-fade-up">
           <div className="flex items-center gap-2 mb-4">
             <Info className="w-5 h-5 text-primary-500" />
-            <h3 className="text-lg font-semibold text-gray-800">Rating Explanation</h3>
+            <h3 className="text-lg font-semibold text-gray-800 font-display">Rating Explanation</h3>
           </div>
-          <p className="text-sm text-gray-500 mb-4">
+          <p className="text-sm text-gray-500 mb-4 leading-relaxed">
             The health score is a 0–100 rating that weighs calorie density, macronutrient balance,
             fiber, sodium, and added sugars. Higher scores indicate nutrient-rich choices that support
             your daily goals.
           </p>
           <div className="grid grid-cols-5 gap-2 text-center text-xs">
             {[
-              { range: '80–100', label: 'Excellent', color: 'bg-green-100 text-green-700' },
-              { range: '60–79', label: 'Good', color: 'bg-lime-100 text-lime-700' },
-              { range: '40–59', label: 'Moderate', color: 'bg-amber-100 text-amber-700' },
-              { range: '20–39', label: 'Poor', color: 'bg-orange-100 text-orange-700' },
-              { range: '0–19', label: 'Unhealthy', color: 'bg-red-100 text-red-700' },
+              { range: '80–100', label: 'Excellent', color: 'bg-green-100/80 text-green-700' },
+              { range: '60–79', label: 'Good', color: 'bg-lime-100/80 text-lime-700' },
+              { range: '40–59', label: 'Moderate', color: 'bg-amber-100/80 text-amber-700' },
+              { range: '20–39', label: 'Poor', color: 'bg-orange-100/80 text-orange-700' },
+              { range: '0–19', label: 'Unhealthy', color: 'bg-red-100/80 text-red-700' },
             ].map((tier) => (
-              <div key={tier.range} className={`rounded-lg py-2 px-1 ${tier.color}`}>
+              <div key={tier.range} className={`rounded-lg py-2 px-1 ${tier.color} hover:scale-105 transition-transform cursor-default`}>
                 <p className="font-bold">{tier.range}</p>
                 <p className="mt-0.5">{tier.label}</p>
               </div>
@@ -480,11 +461,11 @@ export default function FoodDetail() {
           </p>
         </div>
 
-        {/* Why this score? (reason) */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-6">
+        {/* Why this score? */}
+        <div className="surface p-6 mb-6 animate-fade-up">
           <div className="flex items-center gap-2 mb-4">
             <Info className="w-5 h-5 text-primary-500" />
-            <h3 className="text-lg font-semibold text-gray-800">Why This Score?</h3>
+            <h3 className="text-lg font-semibold text-gray-800 font-display">Why This Score?</h3>
             {editing && (
               <span className="text-xs text-primary-500 bg-primary-50 px-2 py-0.5 rounded-full ml-auto">Live preview</span>
             )}
@@ -507,12 +488,12 @@ export default function FoodDetail() {
 
         {/* Pros & Cons */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-green-100">
+          <div className="surface p-6 border-green-100/80 animate-fade-up">
             <div className="flex items-center gap-2 mb-4">
               <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
                 <ThumbsUp className="w-4 h-4 text-green-600" />
               </div>
-              <h3 className="text-base font-semibold text-gray-800">Why It&apos;s Good</h3>
+              <h3 className="text-base font-semibold text-gray-800 font-display">Why It&apos;s Good</h3>
             </div>
             {pros.length > 0 ? (
               <ul className="space-y-2">
@@ -528,12 +509,12 @@ export default function FoodDetail() {
             )}
           </div>
 
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-red-100">
+          <div className="surface p-6 border-red-100/80 animate-fade-up">
             <div className="flex items-center gap-2 mb-4">
               <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
                 <ThumbsDown className="w-4 h-4 text-red-600" />
               </div>
-              <h3 className="text-base font-semibold text-gray-800">Why It&apos;s Bad</h3>
+              <h3 className="text-base font-semibold text-gray-800 font-display">Why It&apos;s Bad</h3>
             </div>
             {cons.length > 0 ? (
               <ul className="space-y-2">
@@ -551,9 +532,9 @@ export default function FoodDetail() {
         </div>
 
         {/* Nutrition Label */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="bg-gradient-to-r from-primary-500 to-primary-600 px-6 py-4">
-            <h3 className="text-xl font-bold text-white flex items-center gap-2">
+        <div className="surface overflow-hidden animate-fade-up">
+          <div className={`bg-gradient-to-r ${config.gradient} px-6 py-4`}>
+            <h3 className="text-xl font-bold text-white flex items-center gap-2 font-display">
               <Flame className="w-6 h-6" />
               Nutrition Facts
             </h3>
@@ -565,23 +546,19 @@ export default function FoodDetail() {
                 <p className="text-sm text-gray-500">Amount Per Serving</p>
               </div>
             </div>
-
-            {/* Calories Highlight */}
             <div className="flex items-end justify-between border-b-4 border-gray-900 pb-3 mb-4">
               <div className="flex items-center gap-3">
                 <Flame className="w-8 h-8 text-orange-500" />
                 <div>
                   <p className="text-sm text-gray-600">Calories</p>
-                  <p className="text-4xl font-bold text-gray-900">{displayValues.calories}</p>
+                  <p className="text-4xl font-bold text-gray-900 tabular-nums">{displayValues.calories}</p>
                 </div>
               </div>
               <p className="text-xs text-gray-500 pb-1">per serving</p>
             </div>
-
             <p className="text-xs text-gray-400 text-right mb-3">% Daily Value based on a 2,000 cal diet</p>
 
-            {/* Detailed Nutrition Label Table */}
-            <div className="border border-gray-200 rounded-lg overflow-hidden">
+            <div className="border border-gray-200 rounded-xl overflow-hidden">
               {[
                 { label: 'Total Fat', amount: displayValues.fat_g, unit: 'g', nutrient: 'fat' as const },
                 { label: 'Total Carbohydrates', amount: displayValues.carbs_g, unit: 'g', nutrient: 'carbs' as const },
@@ -596,11 +573,11 @@ export default function FoodDetail() {
                 return (
                   <div
                     key={row.label}
-                    className={`flex items-center justify-between px-4 py-3 ${idx % 2 === 0 ? 'bg-gray-50' : 'bg-white'} ${idx < 5 ? 'border-b border-gray-200' : ''}`}
+                    className={`flex items-center justify-between px-4 py-3 ${idx % 2 === 0 ? 'bg-gray-50/50' : 'bg-white'} ${idx < 5 ? 'border-b border-gray-200' : ''} hover:bg-gray-50 transition-colors`}
                   >
                     <div className="flex-1">
                       <p className="text-sm font-semibold text-gray-800">{row.label}</p>
-                      <p className="text-xs text-gray-500">{row.amount}{row.unit}</p>
+                      <p className="text-xs text-gray-500 tabular-nums">{row.amount}{row.unit}</p>
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="w-20 h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -611,7 +588,7 @@ export default function FoodDetail() {
                           style={{ width: `${Math.min(pct, 100)}%` }}
                         />
                       </div>
-                      <span className={`text-sm font-bold w-12 text-right ${isHigh ? 'text-orange-600' : isLow ? 'text-green-600' : 'text-gray-700'}`}>
+                      <span className={`text-sm font-bold w-12 text-right tabular-nums ${isHigh ? 'text-orange-600' : isLow ? 'text-green-600' : 'text-gray-700'}`}>
                         {pct}%
                       </span>
                     </div>
@@ -620,7 +597,6 @@ export default function FoodDetail() {
               })}
             </div>
 
-            {/* Legend */}
             <div className="mt-4 flex flex-wrap items-center gap-4 text-xs text-gray-500">
               <div className="flex items-center gap-1.5">
                 <div className="w-3 h-3 rounded-full bg-green-500" />
@@ -647,20 +623,20 @@ export default function FoodDetail() {
 
         {/* Macro balance summary */}
         <div className="grid grid-cols-3 gap-3 mt-6">
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
+          <div className="surface p-4 text-center surface-hover">
             <Scale className="w-5 h-5 text-amber-500 mx-auto mb-2" />
             <p className="text-xs text-gray-500">Fat</p>
-            <p className="text-lg font-bold text-gray-800">{displayValues.fat_g}g</p>
+            <p className="text-lg font-bold text-gray-800 tabular-nums">{displayValues.fat_g}g</p>
           </div>
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
+          <div className="surface p-4 text-center surface-hover">
             <Zap className="w-5 h-5 text-orange-500 mx-auto mb-2" />
             <p className="text-xs text-gray-500">Carbs</p>
-            <p className="text-lg font-bold text-gray-800">{displayValues.carbs_g}g</p>
+            <p className="text-lg font-bold text-gray-800 tabular-nums">{displayValues.carbs_g}g</p>
           </div>
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
+          <div className="surface p-4 text-center surface-hover">
             <Heart className="w-5 h-5 text-blue-500 mx-auto mb-2" />
             <p className="text-xs text-gray-500">Protein</p>
-            <p className="text-lg font-bold text-gray-800">{displayValues.protein_g}g</p>
+            <p className="text-lg font-bold text-gray-800 tabular-nums">{displayValues.protein_g}g</p>
           </div>
         </div>
       </main>
