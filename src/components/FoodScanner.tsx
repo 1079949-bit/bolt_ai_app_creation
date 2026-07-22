@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Camera, X, Upload, Loader2, Sparkles } from 'lucide-react';
+import { Camera, X, Upload, Loader2, Sparkles, Type, ArrowLeft } from 'lucide-react';
 import { supabase, type FoodEntry } from '../lib/supabase';
 
 interface FoodScannerProps {
@@ -220,7 +220,6 @@ export default function FoodScanner({ onClose, onScanComplete, todayStr }: FoodS
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-
     const fileName = file.name.replace(/\.[^/.]+$/, '').replace(/[_-]/g, ' ');
     setFoodName(fileName);
     await handleScan(fileName);
@@ -233,16 +232,18 @@ export default function FoodScanner({ onClose, onScanComplete, todayStr }: FoodS
   };
 
   return (
-    <div className="fixed inset-0 bg-black/95 flex flex-col z-50">
+    <div className="fixed inset-0 bg-black/95 backdrop-blur-md flex flex-col z-50 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between p-5 bg-gradient-to-b from-black to-transparent">
+      <div className="flex items-center justify-between p-5">
         <div className="flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-primary-400" />
-          <h2 className="text-white text-lg font-semibold">Scan Food</h2>
+          <div className="w-9 h-9 bg-gradient-to-br from-primary-400 to-primary-600 rounded-xl flex items-center justify-center shadow-lg shadow-primary-500/20">
+            <Sparkles className="w-5 h-5 text-white" />
+          </div>
+          <h2 className="text-white text-lg font-bold font-display">Scan Food</h2>
         </div>
         <button
           onClick={onClose}
-          className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors"
+          className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors hover:scale-110 active:scale-95"
         >
           <X className="w-6 h-6 text-white" />
         </button>
@@ -250,7 +251,7 @@ export default function FoodScanner({ onClose, onScanComplete, todayStr }: FoodS
 
       {/* Scanner Area */}
       {!manualEntry ? (
-        <div className="flex-1 flex flex-col items-center justify-center p-6">
+        <div className="flex-1 flex flex-col items-center justify-center p-6 animate-fade-up">
           {/* Camera Preview */}
           <div className="relative w-72 h-72 bg-gradient-to-br from-gray-800 to-gray-900 rounded-3xl shadow-2xl flex items-center justify-center mb-8 overflow-hidden">
             {/* Corner brackets */}
@@ -264,7 +265,10 @@ export default function FoodScanner({ onClose, onScanComplete, todayStr }: FoodS
 
             {isScanning ? (
               <div className="flex flex-col items-center z-10">
-                <Loader2 className="w-14 h-14 text-primary-400 animate-spin" />
+                <div className="relative">
+                  <div className="absolute inset-0 rounded-full border-4 border-primary-400/30 animate-pulse-ring" />
+                  <Loader2 className="w-14 h-14 text-primary-400 animate-spin" />
+                </div>
                 <p className="text-white/90 mt-4 font-medium">Analyzing food...</p>
               </div>
             ) : (
@@ -273,12 +277,12 @@ export default function FoodScanner({ onClose, onScanComplete, todayStr }: FoodS
           </div>
 
           {error && (
-            <p className="text-red-400 mb-4 text-center text-sm">{error}</p>
+            <p className="text-red-400 mb-4 text-center text-sm animate-fade-in">{error}</p>
           )}
 
           {/* Meal Type Selection */}
           <div className="mb-6">
-            <p className="text-white/60 text-sm mb-3 text-center">Select meal</p>
+            <p className="text-white/60 text-sm mb-3 text-center font-medium">Select meal</p>
             <div className="flex gap-2">
               {(['breakfast', 'lunch', 'dinner'] as const).map((meal) => (
                 <button
@@ -286,7 +290,7 @@ export default function FoodScanner({ onClose, onScanComplete, todayStr }: FoodS
                   onClick={() => setMealType(meal)}
                   className={`px-5 py-2 rounded-xl text-sm font-medium transition-all capitalize ${
                     mealType === meal
-                      ? 'bg-primary-500 text-white shadow-lg shadow-primary-500/30'
+                      ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-lg shadow-primary-500/30'
                       : 'bg-white/10 text-white/70 hover:bg-white/20'
                   }`}
                 >
@@ -308,7 +312,7 @@ export default function FoodScanner({ onClose, onScanComplete, todayStr }: FoodS
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={isScanning}
-              className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-white text-gray-800 rounded-xl font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50 shadow-lg"
+              className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-white text-gray-800 rounded-xl font-semibold hover:bg-gray-100 transition-all disabled:opacity-50 shadow-lg hover:scale-[1.02] active:scale-[0.98]"
             >
               <Upload className="w-5 h-5" />
               Upload Food Image
@@ -317,9 +321,9 @@ export default function FoodScanner({ onClose, onScanComplete, todayStr }: FoodS
             <button
               onClick={() => setManualEntry(true)}
               disabled={isScanning}
-              className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-white/10 border border-white/20 text-white rounded-xl font-semibold hover:bg-white/20 transition-colors disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-white/10 border border-white/20 text-white rounded-xl font-semibold hover:bg-white/20 transition-all disabled:opacity-50"
             >
-              <Camera className="w-5 h-5" />
+              <Type className="w-5 h-5" />
               Enter Food Name
             </button>
           </div>
@@ -330,8 +334,16 @@ export default function FoodScanner({ onClose, onScanComplete, todayStr }: FoodS
           </p>
         </div>
       ) : (
-        <div className="flex-1 flex flex-col items-center justify-center p-6">
+        <div className="flex-1 flex flex-col items-center justify-center p-6 animate-fade-up">
           <form onSubmit={handleSubmitManual} className="w-full max-w-xs space-y-5">
+            <button
+              type="button"
+              onClick={() => setManualEntry(false)}
+              className="flex items-center gap-2 text-white/60 hover:text-white transition-colors text-sm mb-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Scanner
+            </button>
             <div>
               <label className="block text-white/80 text-sm mb-2 font-medium">Food Name</label>
               <input
@@ -353,7 +365,7 @@ export default function FoodScanner({ onClose, onScanComplete, todayStr }: FoodS
                     onClick={() => setMealType(meal)}
                     className={`flex-1 px-3 py-2 rounded-xl text-sm font-medium transition-all capitalize ${
                       mealType === meal
-                        ? 'bg-primary-500 text-white'
+                        ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white'
                         : 'bg-white/10 text-white/70 hover:bg-white/20'
                     }`}
                   >
@@ -364,13 +376,13 @@ export default function FoodScanner({ onClose, onScanComplete, todayStr }: FoodS
             </div>
 
             {error && (
-              <p className="text-red-400 text-center text-sm">{error}</p>
+              <p className="text-red-400 text-center text-sm animate-fade-in">{error}</p>
             )}
 
             <button
               type="submit"
               disabled={!foodName.trim() || isScanning}
-              className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-primary-500 text-white rounded-xl font-semibold hover:bg-primary-600 transition-colors disabled:opacity-50 shadow-lg shadow-primary-500/30"
+              className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-primary-500/30 transition-all disabled:opacity-50"
             >
               {isScanning ? (
                 <>
@@ -383,14 +395,6 @@ export default function FoodScanner({ onClose, onScanComplete, todayStr }: FoodS
                   Analyze Food
                 </>
               )}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setManualEntry(false)}
-              className="w-full py-3 text-white/60 hover:text-white transition-colors text-sm"
-            >
-              Back to Scanner
             </button>
           </form>
         </div>
